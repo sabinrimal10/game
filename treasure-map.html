@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lost Treasure Map — An Algorithm Adventure</title>
+<style>
+  /* ===== Accessibility-first styles =====
+     - Large readable font (min 18px body, 22px+ for story text)
+     - High contrast (dark text on cream background)
+     - Simple, uncluttered layout
+     - Clear focus states for keyboard users
+     - Generous spacing
+  */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Comic Sans MS", "Chalkboard SE", "Verdana", sans-serif;
+    background: #fdf6e3;
+    color: #2a2a2a;
+    line-height: 1.6;
+  }
+  body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+  .game-container {
+    max-width: 720px;
+    width: 100%;
+    background: #fffbf0;
+    border: 4px solid #8b5a2b;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  header {
+    text-align: center;
+    border-bottom: 3px dashed #8b5a2b;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: 28px;
+    color: #6b4423;
+    margin: 0 0 8px 0;
+  }
+  .progress {
+    font-size: 16px;
+    color: #8b5a2b;
+    font-weight: bold;
+  }
+  .scene {
+    font-size: 22px;
+    margin-bottom: 24px;
+  }
+  .scene p {
+    margin: 0 0 16px 0;
+  }
+  .scene-image {
+    font-size: 80px;
+    text-align: center;
+    margin: 20px 0;
+    line-height: 1;
+  }
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 20px;
+    padding: 16px 20px;
+    background: #e8d5a6;
+    color: #3a2a1a;
+    border: 3px solid #8b5a2b;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+  }
+  button:hover {
+    background: #d9bf7f;
+    transform: translateY(-2px);
+  }
+  button:focus {
+    outline: 4px solid #f0a500;
+    outline-offset: 2px;
+  }
+  .feedback {
+    padding: 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  .feedback.success {
+    background: #d4edda;
+    color: #155724;
+    border: 3px solid #28a745;
+  }
+  .feedback.oops {
+    background: #fff3cd;
+    color: #856404;
+    border: 3px solid #ffc107;
+  }
+  .feedback.win {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 3px solid #17a2b8;
+    font-size: 24px;
+    text-align: center;
+  }
+  .score-badge {
+    display: inline-block;
+    background: #f0a500;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 16px;
+    margin-left: 8px;
+  }
+  .try-again {
+    background: #ffc107;
+    border-color: #e0a800;
+  }
+  .restart {
+    background: #28a745;
+    color: white;
+    border-color: #1e7e34;
+    margin-top: 20px;
+  }
+  footer {
+    margin-top: 30px;
+    padding-top: 16px;
+    border-top: 2px dotted #8b5a2b;
+    font-size: 14px;
+    text-align: center;
+    color: #6b4423;
+  }
+  /* High-contrast focus indicator for keyboard navigation */
+  button:focus-visible {
+    outline: 4px solid #f0a500;
+  }
+</style>
+</head>
+<body>
+<div class="game-container" role="main">
+  <header>
+    <h1>🗺️ The Lost Treasure Map</h1>
+    <div class="progress" id="progress">Stage 1 of 4 <span class="score-badge" id="score">⭐ 0</span></div>
+  </header>
+
+  <div id="story" aria-live="polite"></div>
+
+  <footer>
+    <strong>How to play:</strong> Read each stage carefully. Pick the step that comes <em>next</em> in the correct order. If you get stuck, think about what the explorer needs to do first!
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   THE LOST TREASURE MAP - Algorithm & Sequencing Adventure
+   
+   Concept: Students choose the NEXT step in an algorithm.
+   Wrong steps = instructive failure + "Try Again"
+   Right steps = progress to next stage.
+   
+   Each stage = one step in the overall algorithm:
+   1. Cross the river (must build bridge BEFORE walking across)
+   2. Enter the cave (must light torch BEFORE entering)
+   3. Open the chest (must UNLOCK before OPEN)
+   4. Escape the island (must load boat BEFORE pushing off)
+   ========================================================= */
+
+const scenes = {
+  start: {
+    image: "🏝️",
+    text: "<p>Ahoy, explorer! You've found an old map leading to buried treasure on Mystery Island. But be careful — you must do each step in the <strong>right order</strong>, or your adventure will go wrong!</p><p>Ready to begin?</p>",
+    choices: [
+      { text: "▶️ Start the adventure!", next: "stage1" }
+    ]
+  },
+
+  /* ============ STAGE 1: THE RIVER ============ */
+  stage1: {
+    image: "🌊",
+    text: "<p><strong>Stage 1: The Wide River</strong></p><p>A rushing river blocks your path. You have some planks of wood and some rope. What should you do <em>first</em>?</p>",
+    choices: [
+      { text: "🪵 Build a bridge using the planks and rope", next: "stage1_correct", correct: true },
+      { text: "🏃 Walk across the river", next: "stage1_wrong_walk" },
+      { text: "🏊 Jump in and swim", next: "stage1_wrong_swim" }
+    ]
+  },
+  stage1_correct: {
+    image: "🌉",
+    text: "<div class='feedback success'>✅ Great thinking! You built the bridge first, then walked across safely.</div><p>A bridge now stretches across the river. You walk across carefully and reach the other side.</p>",
+    choices: [
+      { text: "➡️ Continue to Stage 2", next: "stage2" }
+    ],
+    scoreUp: true
+  },
+  stage1_wrong_walk: {
+    image: "💦",
+    text: "<div class='feedback oops'>⚠️ Oh no! You walked straight into the river without building a bridge. You got swept away!</div><p><strong>Hint:</strong> In an algorithm, the order of steps matters. What do you need to build <em>before</em> you can walk across?</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage1", tryAgain: true }
+    ]
+  },
+  stage1_wrong_swim: {
+    image: "🌊",
+    text: "<div class='feedback oops'>⚠️ Oops! The current is too strong for swimming. You wash up back on the bank.</div><p><strong>Hint:</strong> Look at the materials you have. They could help you cross safely!</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage1", tryAgain: true }
+    ]
+  },
+
+  /* ============ STAGE 2: THE DARK CAVE ============ */
+  stage2: {
+    image: "🕳️",
+    text: "<p><strong>Stage 2: The Dark Cave</strong></p><p>You reach a pitch-black cave. You have a torch, a match, and the map. What should you do <em>first</em>?</p>",
+    choices: [
+      { text: "🔦 Walk into the dark cave", next: "stage2_wrong_dark" },
+      { text: "🔥 Light the torch with the match, THEN enter", next: "stage2_correct", correct: true },
+      { text: "🗺️ Read the map inside the cave", next: "stage2_wrong_map" }
+    ]
+  },
+  stage2_correct: {
+    image: "🔥",
+    text: "<div class='feedback success'>✅ Perfect! You lit the torch first, then stepped into the cave with light to guide you.</div><p>The cave glows warmly. You can see a path leading deeper inside.</p>",
+    choices: [
+      { text: "➡️ Continue to Stage 3", next: "stage3" }
+    ],
+    scoreUp: true
+  },
+  stage2_wrong_dark: {
+    image: "😵",
+    text: "<div class='feedback oops'>⚠️ Ouch! You walked into the cave in the dark and tripped over a rock.</div><p><strong>Hint:</strong> You have a torch and a match. What step comes <em>before</em> entering a dark place?</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage2", tryAgain: true }
+    ]
+  },
+  stage2_wrong_map: {
+    image: "❓",
+    text: "<div class='feedback oops'>⚠️ You can't read the map inside — it's too dark!</div><p><strong>Hint:</strong> You need light before you can see anything. What could you use?</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage2", tryAgain: true }
+    ]
+  },
+
+  /* ============ STAGE 3: THE TREASURE CHEST ============ */
+  stage3: {
+    image: "📦",
+    text: "<p><strong>Stage 3: The Treasure Chest</strong></p><p>At the back of the cave sits a locked treasure chest! You have a golden key. What should you do <em>first</em>?</p>",
+    choices: [
+      { text: "🙌 Open the chest lid", next: "stage3_wrong_open" },
+      { text: "🔑 Unlock the chest with the key, THEN open it", next: "stage3_correct", correct: true },
+      { text: "💪 Smash the chest with a rock", next: "stage3_wrong_smash" }
+    ]
+  },
+  stage3_correct: {
+    image: "💎",
+    text: "<div class='feedback success'>✅ Excellent! You unlocked the chest first, then lifted the lid. The treasure is yours!</div><p>Gold coins and jewels sparkle inside. You gather them into your bag.</p>",
+    choices: [
+      { text: "➡️ Continue to Stage 4", next: "stage4" }
+    ],
+    scoreUp: true
+  },
+  stage3_wrong_open: {
+    image: "🔒",
+    text: "<div class='feedback oops'>⚠️ The lid won't budge — it's locked!</div><p><strong>Hint:</strong> You need to <em>unlock</em> something before you can <em>open</em> it. What step comes first?</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage3", tryAgain: true }
+    ]
+  },
+  stage3_wrong_smash: {
+    image: "💥",
+    text: "<div class='feedback oops'>⚠️ You broke the chest AND the treasure inside! That's not a careful algorithm.</div><p><strong>Hint:</strong> You have a key. What's a gentler step to try first?</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage3", tryAgain: true }
+    ]
+  },
+
+  /* ============ STAGE 4: ESCAPE THE ISLAND ============ */
+  stage4: {
+    image: "⛵",
+    text: "<p><strong>Stage 4: Escape the Island!</strong></p><p>Back at the beach, your boat is waiting. You're carrying the heavy treasure. What should you do <em>first</em>?</p>",
+    choices: [
+      { text: "🚤 Push the boat into the water", next: "stage4_wrong_push" },
+      { text: "📦 Load the treasure into the boat, THEN push off", next: "stage4_correct", correct: true },
+      { text: "🏄 Jump in the boat and paddle with your hands", next: "stage4_wrong_jump" }
+    ]
+  },
+  stage4_correct: {
+    image: "🎉",
+    text: "<div class='feedback win'>🏆 YOU DID IT! 🏆<br>You loaded the treasure FIRST, then pushed off. You sail home a hero!</div><p>You followed the algorithm perfectly: <strong>Build → Light → Unlock → Load</strong>. Each step in the right order!</p>",
+    choices: [
+      { text: "🔁 Play again", next: "start", restart: true }
+    ],
+    scoreUp: true,
+    isEnd: true
+  },
+  stage4_wrong_push: {
+    image: "🌊",
+    text: "<div class='feedback oops'>⚠️ The boat floated away — without the treasure AND without you!</div><p><strong>Hint:</strong> You need to get yourself AND the treasure into the boat <em>before</em> it leaves the shore.</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage4", tryAgain: true }
+    ]
+  },
+  stage4_wrong_jump: {
+    image: "🫠",
+    text: "<div class='feedback oops'>⚠️ You forgot the treasure on the beach! All that work for nothing.</div><p><strong>Hint:</strong> Don't forget what you came for. What do you need to do before leaving?</p>",
+    choices: [
+      { text: "🔄 Try again", next: "stage4", tryAgain: true }
+    ]
+  }
+};
+
+/* ============ GAME STATE ============ */
+let score = 0;
+let currentStage = 1;
+
+function updateProgress() {
+  document.getElementById('score').textContent = `⭐ ${score}`;
+  document.getElementById('progress').firstChild.textContent = `Stage ${currentStage} of 4 `;
+}
+
+function render(sceneKey) {
+  const scene = scenes[sceneKey];
+  if (!scene) return;
+
+  // Update score if this is a correct answer
+  if (scene.scoreUp) {
+    score++;
+  }
+
+  // Track which stage we're on based on the scene key
+  if (sceneKey === 'start') { score = 0; currentStage = 1; }
+  else if (sceneKey.startsWith('stage1')) currentStage = 1;
+  else if (sceneKey.startsWith('stage2')) currentStage = 2;
+  else if (sceneKey.startsWith('stage3')) currentStage = 3;
+  else if (sceneKey.startsWith('stage4')) currentStage = 4;
+
+  updateProgress();
+
+  const story = document.getElementById('story');
+  let html = `<div class="scene">`;
+  html += `<div class="scene-image" aria-hidden="true">${scene.image}</div>`;
+  html += scene.text;
+  html += `</div>`;
+  html += `<div class="choices" role="group" aria-label="Choose your next step">`;
+
+  scene.choices.forEach((choice, i) => {
+    let cls = "";
+    if (choice.tryAgain) cls = "try-again";
+    if (choice.restart) cls = "restart";
+    html += `<button class="${cls}" onclick="render('${choice.next}')" aria-label="Choice ${i+1}: ${choice.text.replace(/['"]/g, '')}">${choice.text}</button>`;
+  });
+
+  html += `</div>`;
+  story.innerHTML = html;
+
+  // Move focus to the top of the story for screen readers
+  story.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Start the game
+render('start');
+</script>
+</body>
+</html>
